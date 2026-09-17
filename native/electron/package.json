@@ -1,0 +1,21 @@
+{
+  "name": "thirty-dollar-website-desktop",
+  "productName": "Thirty Dollar Website",
+  "version": "1.2.0",
+  "description": "REMADE of thirtydollar.website — offline meme sequencer",
+  "author": "mounsokdara",
+  "license": "MIT",
+  "private": true,
+  "type": "module",
+  "main": "main.mjs",
+  "scripts": {
+    "start": "electron .",
+    "pack:win": "electron-builder --win nsis portable --publish never",
+    "pack:mac": "electron-builder --mac dmg --publish never",
+    "pack:linux": "electron-builder --linux AppImage --publish never"
+  },
+  "devDependencies": {
+    "electron": "^37.2.6",
+    "electron-builder": "^26.0.12"
+  }
+}

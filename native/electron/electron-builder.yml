@@ -1,0 +1,42 @@
+appId: website.thirtydollar.remade
+productName: Thirty Dollar Website
+copyright: Remade. Not affiliated with thirtydollar.website
+asar: true
+directories:
+  output: dist
+  buildResources: build
+files:
+  - main.mjs
+  - package.json
+extraResources:
+  - from: www
+    to: www
+win:
+  icon: build/icon.png
+  target:
+    - target: nsis
+      arch: [x64]
+    - target: portable
+      arch: [x64]
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  shortcutName: Thirty Dollar Website
+  createDesktopShortcut: true
+  artifactName: ThirtyDollarWebsite-${version}-windows-setup.exe
+portable:
+  artifactName: ThirtyDollarWebsite-${version}-windows-portable.exe
+mac:
+  icon: build/icon.png
+  category: public.app-category.music
+  identity: null
+  target:
+    - target: dmg
+      arch: [universal]
+  artifactName: ThirtyDollarWebsite-${version}-macos.dmg
+linux:
+  icon: build/icon.png
+  category: Audio
+  target:
+    - AppImage
+  artifactName: ThirtyDollarWebsite-${version}-linux.AppImage

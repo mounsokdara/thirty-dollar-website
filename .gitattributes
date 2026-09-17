@@ -1,0 +1,13 @@
+# Keep platform chrome in the git tree (preview / CI need it) but omit it from
+# GitHub's auto-generated source zip attached to each Release.
+.grok export-ignore
+public/__grok export-ignore
+scripts/grok-pwa-plugin.mjs export-ignore
+scripts/grok-pwa-plugin.test.mjs export-ignore
+scripts/grok-pwa-shared.d.mts export-ignore
+scripts/grok-pwa-shared.mjs export-ignore
+server/middleware/grok-pwa.ts export-ignore
+server/virtual-grok-og-identity.d.ts export-ignore
+AGENTS.md export-ignore
+attachments export-ignore
+native/android/tdw.keystore binary

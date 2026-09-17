@@ -1,0 +1,40 @@
+{
+  "name": "DON'T YOU LECTURE ME WITH YOUR THIRTY DOLLAR WEBSITE",
+  "short_name": "Thirty Dollar",
+  "description": "REMADE meme soundboard sequencer. Install on Android, Windows, macOS, or Linux and play offline.",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui", "browser"],
+  "orientation": "any",
+  "background_color": "#36393c",
+  "theme_color": "#36393c",
+  "categories": ["music", "entertainment"],
+  "icons": [
+    {
+      "src": "./icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icon-512-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "./assets/🗿.png",
+      "sizes": "128x121",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "appId": "website.thirtydollar.remade",
+  "appName": "Thirty Dollar Website",
+  "webDir": "portable-dist",
+  "server": {
+    "androidScheme": "https"
+  },
+  "android": {
+    "allowMixedContent": true,
+    "backgroundColor": "#36393c"
+  }
+}

@@ -1,0 +1,248 @@
+@import "tailwindcss";
+@import "./tdw.css";
+
+@theme {
+  --color-td-bg: #36393c;
+  --color-td-red: #dd2e44;
+  --color-td-yellow: #f4900c;
+  --color-td-green: #77b255;
+  --color-td-blue: #3b88c3;
+  --color-td-purple: #9266cc;
+  --color-td-font-yellow: #ccff55;
+  --color-td-font-green: #00ff64;
+  --color-td-font-blue: #00a2ff;
+  --color-aqua: #00ffff;
+  --font-sans: "Lato", Helvetica, Arial, sans-serif;
+}
+
+@layer base {
+  html,
+  body {
+    height: 100%;
+    text-align: center;
+  }
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+}
+
+@font-face {
+  font-family: "Lato";
+  src: url("/fonts/lato-400.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Lato";
+  src: url("/fonts/lato-700.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Lato";
+  src: url("/fonts/lato-900.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Discord Emoji";
+  src: url("/fonts/discord-emoji.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+}
+
+.td-bounce {
+  animation: tdw-bounce 0.4s ease;
+}
+.td-flash {
+  animation: tdw-screenflash 0.66s ease forwards;
+}
+.td-screenpulse {
+  animation: tdw-screenpulse 0.33s ease;
+}
+
+.iconbox .sound,
+.iconbox .action,
+.hotbar .sound,
+.hotbar .action {
+  flex: 0 0 auto;
+}
+
+.emptySequence {
+  color: rgba(255, 255, 255, 0.35);
+  text-align: center;
+  width: 100%;
+  padding: 18px 12px 8px;
+  font-size: 16px;
+}
+
+.seq-cell .vol,
+.seq-cell .pan,
+.soundObj .vol,
+.soundObj .pan {
+  white-space: nowrap;
+  color: #ccc;
+  text-shadow: 0 0 4px #000;
+  pointer-events: none;
+  font-size: 12px;
+  font-weight: 700;
+  position: absolute;
+  top: 0;
+  overflow-x: auto;
+}
+.seq-cell .pan {
+  text-align: left;
+  font-size: 11px;
+  left: 4px;
+}
+.seq-cell .vol {
+  text-align: right;
+  right: 4px;
+}
+
+.bg-swatch {
+  border-radius: 99px;
+  width: 10px;
+  height: 10px;
+  margin-right: 3px;
+  display: inline-block;
+  box-shadow: 0 0 3px #000;
+}
+
+.playbuttons [role="button"] {
+  text-align: left;
+  border: none;
+  width: 100%;
+}
+.saveButtons [role="button"] {
+  text-align: left;
+  border: none;
+  width: 180px;
+}
+
+#everything.dragOver {
+  background-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+.td-emoji {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: content-box;
+  font-family: "Discord Emoji", "Twemoji Mozilla", "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: 0;
+  font-variant-emoji: emoji;
+  font-feature-settings: "liga" 1, "calt" 1;
+  text-rendering: optimizeLegibility;
+  user-select: none;
+  -webkit-user-select: none;
+  pointer-events: none;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.remade-mark {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 6px;
+  flex-wrap: wrap;
+}
+.remade-mark a {
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.22em;
+  color: #ccff55 !important;
+  text-decoration: none;
+  border: 2px solid #ccff55;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+.remade-mark a.github {
+  color: #fff !important;
+  border-color: rgba(255, 255, 255, 0.55);
+  letter-spacing: 0.12em;
+}
+
+.helpButtons .githubBtn,
+.helpButtons .installBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 150px;
+  height: 40px;
+  margin-left: 10px;
+  margin-right: 10px;
+  user-select: none;
+  color: #fff !important;
+  text-decoration: none;
+  font-weight: 700;
+  border-radius: 5px;
+  font-family: Lato, Helvetica, Arial, sans-serif;
+  font-size: 18px;
+  border: none;
+}
+.helpButtons .githubBtn {
+  background: #24292f;
+}
+.helpButtons .installBtn {
+  background: var(--emojigreen);
+  cursor: pointer;
+}
+.helpButtons .githubBtn img,
+.helpButtons .installBtn img {
+  height: 22px;
+  margin-right: 8px;
+}
+.helpButtons .githubBtn:hover,
+.helpButtons .installBtn:hover {
+  transform: scale(1.05);
+}
+
+.install-os {
+  text-align: left;
+  width: 420px;
+  max-width: 92%;
+  margin: 12px auto 0;
+}
+.install-os h2 {
+  margin: 14px 0 4px;
+  font-size: 18px;
+}
+.install-os p {
+  margin: 0 0 6px;
+  opacity: 0.85;
+  line-height: 22px;
+}
+
+.credits {
+  flex-wrap: wrap;
+}
+.socialLinks {
+  flex-wrap: wrap;
+  row-gap: 8px;
+}
+
+.soundSearch {
+  display: block;
+  height: 28px !important;
+  width: 220px;
+  font-size: 13px !important;
+  background-color: rgba(0, 0, 0, 0.4) !important;
+  margin: 0 auto 10px;
+  padding: 0 10px;
+}
+
+.soundSearch::placeholder {
+  color: rgba(255, 255, 255, 0.45);
+}

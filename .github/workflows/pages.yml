@@ -1,0 +1,247 @@
+name: Deploy and package
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  pages:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run build:pages
+      - name: Publish gh-pages branch
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: pages-dist
+          force_orphan: true
+          enable_jekyll: false
+          cname: ""
+      - name: Enable GitHub Pages from gh-pages
+        continue-on-error: true
+        run: |
+          gh api -X POST repos/${{ github.repository }}/pages \
+            -H "Accept: application/vnd.github+json" \
+            -f build_type=legacy \
+            -f "source[branch]=gh-pages" \
+            -f "source[path]=/" \
+          || gh api -X PUT repos/${{ github.repository }}/pages \
+            -H "Accept: application/vnd.github+json" \
+            -f "source[branch]=gh-pages" \
+            -f "source[path]=/" \
+          || true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - run: npm run build:portable
+      - run: node scripts/package-release.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: portable-web
+          path: portable-dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: offline-zip
+          path: release/thirty-dollar-website-offline.zip
+
+  desktop:
+    needs: pages
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            script: pack:win
+          - os: macos-latest
+            script: pack:mac
+          - os: ubuntu-latest
+            script: pack:linux
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - uses: actions/download-artifact@v4
+        with:
+          name: portable-web
+          path: native/electron/incoming-web
+      - name: Copy web into Electron www
+        shell: bash
+        run: |
+          mkdir -p native/electron/build native/electron/www
+          cp public/icon-512.png native/electron/build/icon.png
+          if [ -f native/electron/incoming-web/index.html ]; then
+            cp -a native/electron/incoming-web/. native/electron/www/
+          else
+            src=$(find native/electron/incoming-web -name index.html | head -1)
+            cp -a "$(dirname "$src")/." native/electron/www/
+          fi
+          test -f native/electron/www/index.html
+      - name: Install desktop deps
+        working-directory: native/electron
+        run: npm install
+      - name: Build installer
+        working-directory: native/electron
+        continue-on-error: true
+        run: npm run ${{ matrix.script }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: desktop-${{ matrix.os }}
+          path: |
+            native/electron/dist/**/*.exe
+            native/electron/dist/**/*.dmg
+            native/electron/dist/**/*.AppImage
+            native/electron/dist/**/*.zip
+          if-no-files-found: warn
+
+  android:
+    needs: pages
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - name: Use image Android SDK
+        run: |
+          echo "ANDROID_HOME=${ANDROID_HOME:-/usr/local/lib/android/sdk}" >> "$GITHUB_ENV"
+          echo "ANDROID_SDK_ROOT=${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}" >> "$GITHUB_ENV"
+          ls "${ANDROID_HOME:-/usr/local/lib/android/sdk}" | head
+      - run: npm ci
+      - uses: actions/download-artifact@v4
+        with:
+          name: portable-web
+          path: incoming-web
+      - name: Place portable site
+        run: |
+          mkdir -p portable-dist
+          if [ -f incoming-web/index.html ]; then
+            cp -a incoming-web/. portable-dist/
+          else
+            src=$(find incoming-web -name index.html | head -1)
+            cp -a "$(dirname "$src")/." portable-dist/
+          fi
+          test -f portable-dist/index.html
+      - name: Add Capacitor Android
+        run: |
+          npm install -D @capacitor/core @capacitor/cli @capacitor/android
+          npx cap add android
+          npx cap sync android
+          find android/app/src/main/res -name 'ic_launcher*.png' | while read -r f; do
+            cp native/android/icon.png "$f"
+          done
+      - name: Build signed APK
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleRelease \
+            -Pandroid.injected.signing.store.file="$GITHUB_WORKSPACE/native/android/tdw.keystore" \
+            -Pandroid.injected.signing.store.password=thirtydollar \
+            -Pandroid.injected.signing.key.alias=tdw \
+            -Pandroid.injected.signing.key.password=thirtydollar
+          mkdir -p "$GITHUB_WORKSPACE/release-native"
+          APK=$(find app/build/outputs/apk -name 'app-release.apk' | head -1)
+          if [ -z "$APK" ]; then
+            APK=$(find app/build/outputs/apk -name '*.apk' | head -1)
+          fi
+          SIGNER=$(find "$ANDROID_HOME/build-tools" -name apksigner | head -1)
+          if [ -n "$SIGNER" ] && [ -n "$APK" ]; then
+            "$SIGNER" sign \
+              --ks "$GITHUB_WORKSPACE/native/android/tdw.keystore" \
+              --ks-pass pass:thirtydollar \
+              --key-pass pass:thirtydollar \
+              --ks-key-alias tdw \
+              --out "$GITHUB_WORKSPACE/release-native/ThirtyDollarWebsite.apk" \
+              "$APK" || cp "$APK" "$GITHUB_WORKSPACE/release-native/ThirtyDollarWebsite.apk"
+          else
+            cp "$APK" "$GITHUB_WORKSPACE/release-native/ThirtyDollarWebsite.apk"
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android-apk
+          path: release-native/ThirtyDollarWebsite.apk
+          if-no-files-found: error
+
+  publish:
+    needs: [pages, desktop, android]
+    if: ${{ !cancelled() && needs.pages.result == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: bundled
+      - name: Collect release files
+        run: |
+          mkdir -p release
+          find bundled -type f \( \
+            -name 'ThirtyDollarWebsite*.exe' -o \
+            -name 'ThirtyDollarWebsite*.dmg' -o \
+            -name 'ThirtyDollarWebsite*.AppImage' -o \
+            -name 'ThirtyDollarWebsite.apk' -o \
+            -name 'thirty-dollar-website-offline.zip' \
+          \) -exec cp {} release/ \;
+          ls -lh release
+          cat > release/RELEASE_NOTES.md <<'MD'
+          ## Native installers
+
+          Sideload these. They are **not** from the Play Store / App Store / Microsoft Store, and they are unsigned (Windows SmartScreen and macOS Gatekeeper will warn).
+
+          | File | OS |
+          | --- | --- |
+          | `ThirtyDollarWebsite.apk` | Android — enable unknown sources, then open the APK |
+          | `ThirtyDollarWebsite-*-windows-setup.exe` | Windows installer |
+          | `ThirtyDollarWebsite-*-windows-portable.exe` | Windows, no install |
+          | `ThirtyDollarWebsite-*-macos.dmg` | macOS — right-click Open the first time |
+          | `ThirtyDollarWebsite-*-linux.AppImage` | Linux — `chmod +x` then run |
+          | `thirty-dollar-website-offline.zip` | Any OS — unzip and run `start.bat` / `start.sh` |
+
+          iPhone / iPad: use Safari → Share → Add to Home Screen on the live PWA.
+
+          Live PWA: https://mounsokdara.github.io/thirty-dollar-website/
+
+          This remake is not the official site. Original: https://thirtydollar.website/
+          MD
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_type == 'tag' && github.ref_name || 'latest' }}
+          name: ${{ github.ref_type == 'tag' && format('Thirty Dollar Website {0}', github.ref_name) || 'Latest installers' }}
+          body_path: release/RELEASE_NOTES.md
+          files: |
+            release/*.exe
+            release/*.dmg
+            release/*.AppImage
+            release/*.apk
+            release/*.zip
+          generate_release_notes: true
+          make_latest: true
+          target_commitish: ${{ github.sha }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
